@@ -5,12 +5,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('./src/models/user_model');
 const nodemailer = require('nodemailer');
+const cors = require('cors');
 
 const SECRET_KEY = 'your-secret-key';
 
 const app = express();
 
 app.use(bodyParser.json());
+app.use(cors());
 
 const transporter = nodemailer.createTransport({
     service: 'Gmail', // Use your email service provider
