@@ -1,9 +1,10 @@
 var mongoose = require("mongoose");
+require('dotenv').config();
 
 mongoose.set("strictQuery", true);
 
 // Connect to DB
-mongoose.connect("mongodb+srv://aniframe20:dS2gjbUnyts0S6nW@cluster0.f5bhh4i.mongodb.net/AniFrames?retryWrites=true&w=majority");
+mongoose.connect(process.env.DATABASE_URL);
 
 // Event handlers for database connection
 const db = mongoose.connection;
