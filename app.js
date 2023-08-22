@@ -3,12 +3,14 @@ const mongoose = require('./src/config/mongoDB');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
+const path = require('path');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use("/", express.static("src/public"));
+const publicFolderPath = path.join(__dirname, 'src', 'public');
+app.use(express.static(publicFolderPath));
 
 const basic_routes = require('./src/routes/basic_routes');
 const admin_basic_routes = require('./src/routes/admin_basic_routes');
