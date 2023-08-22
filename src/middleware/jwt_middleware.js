@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
         if (err) {
             return res.status(403).json({ message: 'Token is not valid' });
         }
-        req.user = decoded; // Attach the decoded user data to the request
+        req.userData = decoded; // Attach the decoded user data to the request
 
         next();
     });
