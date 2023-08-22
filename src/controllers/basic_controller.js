@@ -34,7 +34,7 @@ module.exports = class Basic {
             }
 
             // Generate JWT
-            const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET_KEY);
+            const token = jwt.sign({ userId: user._id, role: user.role, email: user.email, username: user.username }, process.env.JWT_SECRET_KEY);
 
             res.status(200).json({ token });
         } catch (error) {
