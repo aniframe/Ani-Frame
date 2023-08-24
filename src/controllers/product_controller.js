@@ -42,7 +42,7 @@ module.exports = class ProductController {
                 for (let j = 0; j < products[i].images.length; j++) {
                     products[i].images[j] = await update_path("product", products[i].images[j]);
                 }
-            }            
+            }
 
             return res.status(200).json({
                 message: "Successfully fetched products!",
@@ -59,8 +59,10 @@ module.exports = class ProductController {
 
     async getProductById(req, res) {
         try {
-            const productId = req.params.id; // Assuming you're passing the product ID as a route parameter
+            const productId = req.query.id; // Assuming you're passing the product ID as a route parameter
+            console.log(productId);
             const product = await Product.findById(productId); // Fetch product by ID from the database
+            console.log(product);
 
             if (!product) {
                 return res.status(404).json({
@@ -69,8 +71,8 @@ module.exports = class ProductController {
             }
 
             // Apply image_url logic to product photos
-            for (let j = 0; j < product.product_photo.length; j++) {
-                product.product_photo[j] = await update_path("product", product.product_photo[j]);
+            for (let j = 0; j < product.images.length; j++) {
+                product.images[j] = await update_path("product", product.images[j]);
             }
 
             return res.status(200).json({
