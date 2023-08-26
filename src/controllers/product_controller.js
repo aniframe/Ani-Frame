@@ -1,5 +1,7 @@
 const Product = require("../models/product_model");
 const update_path = require('../utilities/response_image_url');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = class ProductController {
     async createProduct(req, res) {
@@ -60,9 +62,7 @@ module.exports = class ProductController {
     async getProductById(req, res) {
         try {
             const productId = req.query.id; // Assuming you're passing the product ID as a route parameter
-            console.log(productId);
             const product = await Product.findById(productId); // Fetch product by ID from the database
-            console.log(product);
 
             if (!product) {
                 return res.status(404).json({
@@ -127,11 +127,26 @@ module.exports = class ProductController {
             // Similar authentication and role check logic here
             const productId = req.query._id;
             const deletedProduct = await Product.findByIdAndDelete(productId);
+
             if (!deletedProduct) {
                 return res.status(404).json({
                     message: "Product not found for delete",
                 });
             }
+
+            // Delete associated images from the server location
+            if (deletedProduct.images && deletedProduct.images.length > 0) {
+                const imageDir = path.join(__dirname, '..', '..', 'src', 'public', 'uploads', 'images', 'product');
+
+                deletedProduct.images.forEach(imageFilename => {
+                    const imagePath = path.join(imageDir, imageFilename);
+                    if (fs.existsSync(imagePath)) {
+                        fs.unlinkSync(imagePath);
+                        console.log(`Deleted image: ${imagePath}`);
+                    }
+                });
+            }
+
             // Similar image_url logic here
             return res.status(200).json({
                 message: "Product deleted successfully!",
@@ -145,4 +160,5 @@ module.exports = class ProductController {
             });
         }
     }
+
 };
