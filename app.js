@@ -11,6 +11,11 @@ app.use(bodyParser.json());
 app.use(cors());
 const publicFolderPath = path.join(__dirname, 'src', 'public');
 app.use(express.static(publicFolderPath));
+// Custom middleware to log API requests
+app.use((req, res, next) => {
+    console.log(`API Request: ${req.method} ${req.originalUrl}`);
+    next();
+});
 
 const basic_routes = require('./src/routes/basic_routes');
 const admin_basic_routes = require('./src/routes/admin_basic_routes');

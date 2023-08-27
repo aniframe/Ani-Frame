@@ -9,6 +9,10 @@ const productSchema = new mongoose.Schema({
     stock: Number,
     ratings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
+    status: {
+        type: Boolean,
+        default: false // Assuming active by default
+    }
 });
 
 const Product = mongoose.model('Product', productSchema);

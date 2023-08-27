@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Product = require("../models/product_model");
 const update_path = require('../utilities/response_image_url');
 const fs = require('fs');
@@ -38,11 +39,21 @@ module.exports = class ProductController {
 
     async getAllProducts(req, res) {
         try {
-            const products = await Product.find({}); // Fetch products from the database
+            const products = await Product.aggregate([
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                }
+            ]); // Fetch products from the database
 
             for (let i = 0; i < products.length; i++) {
                 for (let j = 0; j < products[i].images.length; j++) {
                     products[i].images[j] = await update_path("product", products[i].images[j]);
+                    products[i].category[0].image = await update_path("category", products[i].category[0].image);
                 }
             }
 
@@ -62,7 +73,19 @@ module.exports = class ProductController {
     async getProductById(req, res) {
         try {
             const productId = req.query.id; // Assuming you're passing the product ID as a route parameter
-            const product = await Product.findById(productId); // Fetch product by ID from the database
+            const product = await Product.aggregate([
+                {
+                    $match: { _id: new mongoose.Types.ObjectId(productId) }
+                },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                }
+            ]) // Fetch product by ID from the database
 
             if (!product) {
                 return res.status(404).json({
@@ -71,8 +94,9 @@ module.exports = class ProductController {
             }
 
             // Apply image_url logic to product photos
-            for (let j = 0; j < product.images.length; j++) {
-                product.images[j] = await update_path("product", product.images[j]);
+            for (let j = 0; j < product[0].images.length; j++) {
+                product[0].images[j] = await update_path("product", product[0].images[j]);
+                product[0].category[0].image = await update_path("category", product[0].category[0].image);
             }
 
             return res.status(200).json({
@@ -91,13 +115,14 @@ module.exports = class ProductController {
         try {
             // Similar authentication and role check logic here
             const productId = req.query._id;
-            const { name, description, price, category, stock } = req.body;
+            const { name, description, price, category, stock, status } = req.body;
             const product = {
                 name,
                 description,
                 price,
                 category,
                 stock,
+                status
             };
             if (req.files && req.files.length > 0) {
                 product.images = req.files.map((file) => file.filename);
@@ -160,5 +185,4 @@ module.exports = class ProductController {
             });
         }
     }
-
 };
