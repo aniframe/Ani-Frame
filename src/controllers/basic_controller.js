@@ -61,8 +61,6 @@ module.exports = class Basic {
                 email,
                 password: hashedPassword,
                 role: 'customer', // Set default role
-                cart: [],
-                orders: [],
                 addresses: []
             });
 

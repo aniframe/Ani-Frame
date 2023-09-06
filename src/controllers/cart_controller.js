@@ -1,9 +1,6 @@
-const { default: mongoose } = require('mongoose');
 const User = require('../models/user_model');
 const Cart = require('../models/cart_model'); // Import the Cart model
 const update_path = require('../utilities/response_image_url');
-const fs = require('fs');
-const path = require('path');
 
 module.exports = class CartController {
     async addToCart(req, res) {
