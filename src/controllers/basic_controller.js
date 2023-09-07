@@ -36,7 +36,7 @@ module.exports = class Basic {
             // Generate JWT
             const token = jwt.sign({ userId: user._id, role: user.role, email: user.email, username: user.username }, process.env.JWT_SECRET_KEY);
 
-            res.status(200).json({ token , role : user.role});
+            res.status(200).json({ token, role: user.role });
         } catch (error) {
             res.status(500).json({ error: 'An error occurred' });
         }
@@ -61,6 +61,7 @@ module.exports = class Basic {
                 email,
                 password: hashedPassword,
                 role: 'customer', // Set default role
+                orders: [],
                 addresses: []
             });
 

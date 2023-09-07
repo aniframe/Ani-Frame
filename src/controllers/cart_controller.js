@@ -126,46 +126,69 @@ module.exports = class CartController {
     async increaseProductQuantity(req, res) {
         try {
             const productId = req.query.productId;
-            const userId = req.userData.userId;; // Extract the user ID from the decoded JWT
-
-            // Find and update the user's cart
-            const result = await Cart.findOneAndUpdate(
-                { user: userId, 'items.product': productId },
-                { $inc: { 'items.$.quantity': 1 } },
-                { new: true }
-            );
-
-            if (result) {
-                res.status(200).json({ message: 'Product quantity increased successfully' });
-            } else {
-                res.status(404).json({ message: 'Product not found in cart' });
+            const userId = req.userData.userId; // Extract the user ID from the decoded JWT
+    
+            // Find the user's cart
+            const cart = await Cart.findOne({ user: userId });
+    
+            if (!cart) {
+                return res.status(404).json({ message: 'Cart not found' });
             }
+    
+            // Find the item with the given productId in the cart
+            const item = cart.items.find(item => item.product.equals(productId));
+    
+            if (!item) {
+                return res.status(404).json({ message: 'Product not found in cart' });
+            }
+    
+            // Increase the quantity of the found item
+            item.quantity += 1;
+    
+            // Save the updated cart
+            await cart.save();
+    
+            res.status(200).json({ message: 'Product quantity increased successfully' });
         } catch (error) {
             console.error('Error increasing product quantity:', error);
             res.status(500).json({ message: 'Internal server error' });
         }
     }
-
+    
     async decreaseProductQuantity(req, res) {
-        const productId = req.query.productId;
-        const userId = req.userData.userId;; // Extract the user ID from the decoded JWT
-
         try {
-            // Find and update the user's cart
-            const result = await Cart.findOneAndUpdate(
-                { user: userId, 'items.product': productId, 'items.quantity': { $gt: 1 } },
-                { $inc: { 'items.$.quantity': -1 } },
-                { new: true }
-            );
-
-            if (result) {
-                res.status(200).json({ message: 'Product quantity decreased successfully' });
-            } else {
-                res.status(404).json({ message: 'Product not found in cart or minimum quantity reached' });
+            const productId = req.query.productId;
+            const userId = req.userData.userId; // Extract the user ID from the decoded JWT
+    
+            // Find the user's cart
+            const cart = await Cart.findOne({ user: userId });
+    
+            if (!cart) {
+                return res.status(404).json({ message: 'Cart not found' });
             }
+    
+            // Find the item with the given productId in the cart
+            const item = cart.items.find(item => item.product.equals(productId));
+    
+            if (!item) {
+                return res.status(404).json({ message: 'Product not found in cart' });
+            }
+    
+            // Decrease the quantity of the found item, but ensure it doesn't go below 1
+            if (item.quantity > 1) {
+                item.quantity -= 1;
+            } else {
+                return res.status(400).json({ message: 'Minimum quantity reached' });
+            }
+    
+            // Save the updated cart
+            await cart.save();
+    
+            res.status(200).json({ message: 'Product quantity decreased successfully' });
         } catch (error) {
             console.error('Error decreasing product quantity:', error);
             res.status(500).json({ message: 'Internal server error' });
         }
     }
+    
 };
