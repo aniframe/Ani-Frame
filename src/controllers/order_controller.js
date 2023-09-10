@@ -25,6 +25,7 @@ module.exports = class OrderController {
                 products: orderData.products,
                 totalPrice: orderData.totalPrice,
                 status: orderData.status,
+                address: orderData.address._id
             });
 
             await order.save();
