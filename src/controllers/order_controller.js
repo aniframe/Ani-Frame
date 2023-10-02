@@ -59,22 +59,24 @@ module.exports = class OrderController {
             for (const order of user.orders) {
                 const addressId = order.address;
 
-                // Find the matching address from user's addresses
-                const address = user.addresses.find((a) => a._id.toString() === addressId.toString());
+                if (addressId) {
+                    // Find the matching address from user's addresses
+                    const address = user.addresses.find((a) => a._id.toString() === addressId.toString());
 
-                if (address) {
-                    // Create a new object with the updated 'address' property
-                    const updatedOrder = { ...order._doc, address };
+                    if (address) {
+                        // Create a new object with the updated 'address' property
+                        const updatedOrder = { ...order._doc, address };
 
-                    // Populate the 'products' field in the order
-                    const populatedOrder = await Order.populate(updatedOrder, {
-                        path: 'products.product',
-                        model: 'Product', // Replace 'Product' with your actual model name
-                    });
+                        // Populate the 'products' field in the order
+                        const populatedOrder = await Order.populate(updatedOrder, {
+                            path: 'products.product',
+                            model: 'Product', // Replace 'Product' with your actual model name
+                        });
 
 
-                    // Add the updated order to the array
-                    ordersWithAddresses.push(populatedOrder);
+                        // Add the updated order to the array
+                        ordersWithAddresses.push(populatedOrder);
+                    }
                 }
             }
 
@@ -87,7 +89,7 @@ module.exports = class OrderController {
 
     async getAllOrders(req, res) {
         try {
-            const orders = await Order.find();
+            const orders = await Order.find().populate('products.product');
 
             if (!orders) {
                 return res.status(404).json({ message: 'No orders found' });
@@ -105,20 +107,23 @@ module.exports = class OrderController {
                     continue; // Skip this order if the user is not found
                 }
 
-                // Find the matching address from user's addresses
-                const address = user.addresses.find((a) => a._id.toString() === order.address.toString());
+                // Check if order.address is defined and not null before accessing its _id property
+                if (order.address && order.address.toString) {
+                    // Find the matching address from user's addresses
+                    const address = user.addresses.find((a) => a._id.toString() === order.address.toString());
 
-                if (!address) {
-                    continue; // Skip this order if the address is not found
+                    if (!address) {
+                        continue; // Skip this order if the address is not found
+                    }
+
+                    // Create an object that includes the order and its associated address
+                    const orderWithAddress = {
+                        order,
+                        address,
+                    };
+
+                    ordersWithAddresses.push(orderWithAddress);
                 }
-
-                // Create an object that includes the order and its associated address
-                const orderWithAddress = {
-                    order,
-                    address,
-                };
-
-                ordersWithAddresses.push(orderWithAddress);
             }
 
             res.status(200).json(ordersWithAddresses);
@@ -127,6 +132,7 @@ module.exports = class OrderController {
             res.status(500).json({ message: 'Internal server error' });
         }
     }
+
 
     async updateOrderStatus(req, res) {
         const orderId = req.query.orderId;
@@ -180,83 +186,89 @@ module.exports = class OrderController {
 
     async getPendingOrders(req, res) {
         try {
-            const pendingOrders = await Order.find({ status: 'pending' });
-    
+            const pendingOrders = await Order.find({ status: 'pending' }).populate('products.product');
+
             if (!pendingOrders) {
                 return res.status(404).json({ message: 'No pending orders found' });
             }
-    
+
             // Create an array to store pending orders with addresses
             const pendingOrdersWithAddresses = [];
-    
+
             // Iterate through each pending order
             for (const order of pendingOrders) {
                 // Find the user by their ID using the user field in the order
                 const user = await User.findById(order.user);
-    
+
                 if (!user) {
                     continue; // Skip this order if the user is not found
                 }
-    
-                // Find the matching address from user's addresses
-                const address = user.addresses.find((a) => a._id.toString() === order.address.toString());
-    
-                if (!address) {
-                    continue; // Skip this order if the address is not found
+
+                // Check if order.address is defined and not null before accessing its _id property
+                if (order.address && order.address.toString) {
+                    // Find the matching address from user's addresses
+                    const address = user.addresses.find((a) => a._id.toString() === order.address.toString());
+
+                    if (!address) {
+                        continue; // Skip this order if the address is not found
+                    }
+
+                    // Create an object that includes the pending order and its associated address
+                    const pendingOrderWithAddress = {
+                        order,
+                        address,
+                    };
+
+                    pendingOrdersWithAddresses.push(pendingOrderWithAddress);
                 }
-    
-                // Create an object that includes the pending order and its associated address
-                const pendingOrderWithAddress = {
-                    order,
-                    address,
-                };
-    
-                pendingOrdersWithAddresses.push(pendingOrderWithAddress);
             }
-    
+
             res.status(200).json(pendingOrdersWithAddresses);
         } catch (error) {
             console.error('Error fetching pending orders:', error);
             res.status(500).json({ message: 'Internal server error' });
         }
     }
-    
+
     async getDeliveredOrders(req, res) {
         try {
-            const deliveredOrders = await Order.find({ status: 'delivered' });
-    
+            const deliveredOrders = await Order.find({ status: 'delivered' }).populate('products.product');
+
             if (!deliveredOrders) {
                 return res.status(404).json({ message: 'No delivered orders found' });
             }
-    
+
             // Create an array to store delivered orders with addresses
             const deliveredOrdersWithAddresses = [];
-    
+
             // Iterate through each delivered order
             for (const order of deliveredOrders) {
                 // Find the user by their ID using the user field in the order
                 const user = await User.findById(order.user);
-    
+
                 if (!user) {
                     continue; // Skip this order if the user is not found
                 }
-    
-                // Find the matching address from user's addresses
-                const address = user.addresses.find((a) => a._id.toString() === order.address.toString());
-    
-                if (!address) {
-                    continue; // Skip this order if the address is not found
+
+                // Check if order.address is defined and not null before accessing its _id property
+                if (order.address && order.address.toString) {
+                    // Find the matching address from user's addresses
+                    const address = user.addresses.find((a) => a._id.toString() === order.address.toString());
+
+                    if (!address) {
+                        continue; // Skip this order if the address is not found
+                    }
+
+                    // Create an object that includes the delivered order and its associated address
+                    const deliveredOrderWithAddress = {
+                        order,
+                        address,
+                    };
+
+                    deliveredOrdersWithAddresses.push(deliveredOrderWithAddress);
                 }
-    
-                // Create an object that includes the delivered order and its associated address
-                const deliveredOrderWithAddress = {
-                    order,
-                    address,
-                };
-    
-                deliveredOrdersWithAddresses.push(deliveredOrderWithAddress);
             }
-    
+
             res.status(200).json(deliveredOrdersWithAddresses);
         } catch (error) {
             console.error('Error fetching delivered orders:', error);
