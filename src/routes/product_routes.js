@@ -4,6 +4,7 @@ const multer = require("multer");
 const ProductController = require("../controllers/product_controller");
 const admin_middleware = require('../middleware/adminMiddleware');
 const jwt_middleware = require('../middleware/jwt_middleware');
+const optionaljwt_middleware = require('../middleware/optional_jwtMiddleware');
 
 const product_controller = new ProductController();
 
@@ -31,8 +32,8 @@ const upload = multer({
 });
 
 router.post("/", jwt_middleware, admin_middleware, upload.array("product_photo"), (req, res) => product_controller.createProduct(req, res));
-router.get("/", jwt_middleware, (req, res) => product_controller.getAllProducts(req, res));
-router.get("/byid", jwt_middleware, (req, res) => product_controller.getProductById(req, res));
+router.get("/", optionaljwt_middleware, (req, res) => product_controller.getAllProducts(req, res));
+router.get("/byid", optionaljwt_middleware, (req, res) => product_controller.getProductById(req, res));
 router.put("/", jwt_middleware, admin_middleware, upload.array("product_photo"), (req, res) => product_controller.updateProduct(req, res));
 router.delete("/", jwt_middleware, admin_middleware, (req, res) => product_controller.deleteProduct(req, res));
 

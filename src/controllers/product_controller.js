@@ -40,7 +40,7 @@ module.exports = class ProductController {
     async getAllProducts(req, res) {
         try {
             // Check the user's role from the token
-            const userRole = req.userData.role;
+            const userRole = req.userData ? req.userData.role : null;
 
             // Define the aggregation pipeline stages
             const pipeline = [
@@ -55,7 +55,7 @@ module.exports = class ProductController {
             ];
 
             // Add a $match stage to filter products based on status if the user is a customer
-            if (userRole === "customer") {
+            if (userRole === "customer" || userRole === null) {
                 pipeline.unshift({
                     $match: { status: true }
                 });
@@ -87,7 +87,8 @@ module.exports = class ProductController {
         try {
             const productId = req.query.id; // Assuming you're passing the product ID as a route parameter
 
-            const userRole = req.userData.role;
+            // Check the user's role from the token
+            const userRole = req.userData ? req.userData.role : null;
 
             // Define the aggregation pipeline stages
             const pipeline = [
@@ -105,7 +106,7 @@ module.exports = class ProductController {
             ];
 
             // Add a $match stage to filter the product based on status if the user is a customer
-            if (userRole === "customer") {
+            if (userRole === "customer" || userRole === null) {
                 pipeline.unshift({
                     $match: { status: true }
                 });
