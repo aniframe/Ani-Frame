@@ -39,7 +39,11 @@ module.exports = class ProductController {
 
     async getAllProducts(req, res) {
         try {
-            const products = await Product.aggregate([
+            // Check the user's role from the token
+            const userRole = req.userData.role;
+
+            // Define the aggregation pipeline stages
+            const pipeline = [
                 {
                     $lookup: {
                         from: "categories",
@@ -48,7 +52,16 @@ module.exports = class ProductController {
                         as: "category"
                     }
                 }
-            ]); // Fetch products from the database
+            ];
+
+            // Add a $match stage to filter products based on status if the user is a customer
+            if (userRole === "customer") {
+                pipeline.unshift({
+                    $match: { status: true }
+                });
+            }
+
+            const products = await Product.aggregate(pipeline);
 
             for (let i = 0; i < products.length; i++) {
                 for (let j = 0; j < products[i].images.length; j++) {
@@ -73,7 +86,11 @@ module.exports = class ProductController {
     async getProductById(req, res) {
         try {
             const productId = req.query.id; // Assuming you're passing the product ID as a route parameter
-            const product = await Product.aggregate([
+
+            const userRole = req.userData.role;
+
+            // Define the aggregation pipeline stages
+            const pipeline = [
                 {
                     $match: { _id: new mongoose.Types.ObjectId(productId) }
                 },
@@ -85,9 +102,18 @@ module.exports = class ProductController {
                         as: "category"
                     }
                 }
-            ]) // Fetch product by ID from the database
+            ];
 
-            if (!product) {
+            // Add a $match stage to filter the product based on status if the user is a customer
+            if (userRole === "customer") {
+                pipeline.unshift({
+                    $match: { status: true }
+                });
+            }
+
+            const product = await Product.aggregate(pipeline); // Fetch product by ID from the database
+
+            if (!product || product.length === 0) {
                 return res.status(404).json({
                     message: "Product not found"
                 });

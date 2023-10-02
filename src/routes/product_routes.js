@@ -31,8 +31,8 @@ const upload = multer({
 });
 
 router.post("/", jwt_middleware, admin_middleware, upload.array("product_photo"), (req, res) => product_controller.createProduct(req, res));
-router.get("/", (req, res) => product_controller.getAllProducts(req, res));
-router.get("/byid", (req, res) => product_controller.getProductById(req, res));
+router.get("/", jwt_middleware, (req, res) => product_controller.getAllProducts(req, res));
+router.get("/byid", jwt_middleware, (req, res) => product_controller.getProductById(req, res));
 router.put("/", jwt_middleware, admin_middleware, upload.array("product_photo"), (req, res) => product_controller.updateProduct(req, res));
 router.delete("/", jwt_middleware, admin_middleware, (req, res) => product_controller.deleteProduct(req, res));
 

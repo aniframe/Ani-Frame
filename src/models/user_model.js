@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
     addresses: [addressSchema],
 });
 
+const Address = mongoose.model('Address', addressSchema);
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

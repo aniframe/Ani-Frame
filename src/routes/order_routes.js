@@ -13,5 +13,7 @@ router.get("/", jwt_middleware, user_middleware, (req, res) => OrderClass.getOrd
 router.get("/all", jwt_middleware, admin_middleware, (req, res) => OrderClass.getAllOrders(req, res));
 router.put("/", jwt_middleware, admin_middleware, (req, res) => OrderClass.updateOrderStatus(req, res));
 router.get('/byId', (req, res) => OrderClass.getOrderById(req, res));
+router.get('/pending', jwt_middleware, admin_middleware, (req, res) => OrderClass.getPendingOrders(req, res));
+router.get('/delivered', jwt_middleware, admin_middleware, (req, res) => OrderClass.getDeliveredOrders(req, res));
 
 module.exports = router;
