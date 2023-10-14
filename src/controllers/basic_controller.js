@@ -24,13 +24,13 @@ module.exports = class Basic {
             // Find user by email
             const user = await user_model.findOne({ email });
             if (!user) {
-                return res.status(401).json({ message: 'Authentication failed' });
+                return res.status(401).json({ message: 'User not Found! Try to Register.' });
             }
 
             // Compare passwords
             const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
-                return res.status(401).json({ message: 'Authentication failed' });
+                return res.status(401).json({ message: 'Password is Incorrect!' });
             }
 
             // Generate JWT
