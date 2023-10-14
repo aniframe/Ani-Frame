@@ -5,12 +5,20 @@ const ProductController = require("../controllers/product_controller");
 const admin_middleware = require('../middleware/adminMiddleware');
 const jwt_middleware = require('../middleware/jwt_middleware');
 const optionaljwt_middleware = require('../middleware/optional_jwtMiddleware');
+const fs = require('fs');
+const path = require('path');
 
 const product_controller = new ProductController();
 
+// Ensure the directory for file uploads exists or create it
+const uploadDirectory = "src/public/uploads/images/product";
+if (!fs.existsSync(uploadDirectory)) {
+    fs.mkdirSync(uploadDirectory, { recursive: true });
+}
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "src/public/uploads/images/product"); // Set the destination folder for uploaded files
+        cb(null, uploadDirectory); // Set the destination folder for uploaded files
     },
     filename: function (req, file, cb) {
         cb(null, (Date.now() + file.originalname).replace(/\s+/g, "")); // Set a unique filename for the uploaded file

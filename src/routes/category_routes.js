@@ -4,12 +4,20 @@ const category_controller = require("../controllers/category_controller");
 const admin_middleware = require('../middleware/adminMiddleware');
 const jwt_middleware = require('../middleware/jwt_middleware');
 const multer = require("multer");
+const fs = require('fs');
+const path = require('path');
 
 const CategoryClass = new category_controller();
 
+// Ensure the directory for file uploads exists or create it
+const uploadDirectory = "src/public/uploads/images/category";
+if (!fs.existsSync(uploadDirectory)) {
+    fs.mkdirSync(uploadDirectory, { recursive: true });
+}
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "src/public/uploads/images/category"); // Set the destination folder for uploaded files
+        cb(null, uploadDirectory); // Set the destination folder for uploaded files
     },
     filename: function (req, file, cb) {
         cb(null, (Date.now() + file.originalname).replace(/\s+/g, "")); // Set a unique filename for the uploaded file
