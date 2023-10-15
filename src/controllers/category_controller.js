@@ -2,12 +2,58 @@ const Category = require('../models/category_model');
 const update_path = require('../utilities/response_image_url');
 const fs = require('fs');
 const path = require('path');
+const ftp = require('basic-ftp');
+
+async function uploadFile(file) {
+    const client = new ftp.Client();
+    try {
+        await client.access({
+            host: "aniframes.in",
+            user: "u614400033",
+            password: "Ani@Frame*20",
+            secure: false, // Set to true if you're using FTPS
+        });
+
+        // Add a timestamp to the original file name
+        const timestamp = Date.now();
+        const remoteFileName = `${timestamp}_${file.originalname}`;
+
+        // Set the remote path where you want to store the file on the FTP server
+        const remotePath = '/public_html/category/' + remoteFileName;
+
+        // Check if the remote directory exists, and create it if it doesn't
+        const remoteDir = remotePath.substr(0, remotePath.lastIndexOf('/'));
+        await client.ensureDir(remoteDir);
+
+        // Upload the file
+        await client.uploadFrom(file.path, remotePath);
+
+        return remotePath;
+    } catch (error) {
+        console.error('Error uploading file:', file.originalname);
+        throw error;
+    } finally {
+        client.close();
+    }
+}
 
 module.exports = class CategoryController {
     async createCategory(req, res) {
         try {
+            const myfiles = req.file;
             const { name, description } = req.body;
-            const newCategory = new Category({ name, description, image: req.file.filename });
+
+            let uploadedFileName = "";
+
+            uploadedFileName = await uploadFile(myfiles);
+
+            const newCategory = new Category({
+                name,
+                description,
+                // Store only the filename if an image was uploaded
+                image: path.basename(uploadedFileName)
+            });
+
             await newCategory.save();
             res.status(201).json({ message: 'Category created successfully', category: newCategory });
         } catch (error) {

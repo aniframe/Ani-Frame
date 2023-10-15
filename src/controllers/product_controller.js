@@ -3,10 +3,52 @@ const Product = require("../models/product_model");
 const update_path = require('../utilities/response_image_url');
 const fs = require('fs');
 const path = require('path');
+const ftp = require('basic-ftp');
+
+async function uploadFile(file) {
+    const client = new ftp.Client();
+    try {
+        await client.access({
+            host: "aniframes.in",
+            user: "u614400033",
+            password: "Ani@Frame*20",
+            secure: false, // Set to true if you're using FTPS
+        });
+
+        // Add a timestamp to the original file name
+        const timestamp = Date.now();
+        const remoteFileName = `${timestamp}_${file.originalname}`;
+
+        // Set the remote path where you want to store the file on the FTP server
+        const remotePath = '/public_html/product/' + remoteFileName;
+
+        // Check if the remote directory exists, and create it if it doesn't
+        const remoteDir = remotePath.substr(0, remotePath.lastIndexOf('/'));
+        await client.ensureDir(remoteDir);
+
+        // Upload the file
+        await client.uploadFrom(file.path, remotePath);
+        
+        return remotePath;
+    } catch (error) {
+        console.error('Error uploading file:', file.originalname);
+        throw error;
+    } finally {
+        client.close();
+    }
+}
 
 module.exports = class ProductController {
+
     async createProduct(req, res) {
         try {
+            const myfiles = req.files;
+            let uploadedFiles;
+            if (myfiles && myfiles.length > 0) {
+                // Upload files to FTP server and collect the remote file paths
+                uploadedFiles = await Promise.all(myfiles.map(uploadFile));
+            }
+
             // Similar authentication and role check logic here
             const { name, description, price, category, stock } = req.body;
             const product = {
@@ -14,8 +56,11 @@ module.exports = class ProductController {
                 description,
                 price,
                 category,
-                images: req.files.map((file) => file.filename),
-                stock,
+                images: uploadedFiles.map(filename => {
+                    // Extract the file name from the full path
+                    return path.basename(filename);
+                }),
+                stock
             };
             const newProduct = new Product(product);
             const savedProduct = await newProduct.save();
