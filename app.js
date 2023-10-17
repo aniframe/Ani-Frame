@@ -1,3 +1,5 @@
+process.noDeprecation = true;
+
 const express = require('express');
 const mongoose = require('./src/config/mongoDB');
 const bodyParser = require('body-parser');
