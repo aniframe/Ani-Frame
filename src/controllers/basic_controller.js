@@ -87,4 +87,114 @@ module.exports = class Basic {
             res.status(500).json({ error: 'An error occurred' });
         }
     }
+
+    async changePassword(req, res) {
+        try {
+            const userId = req.userData.userId;
+
+            const { oldPassword, newPassword } = req.body;
+
+            const user = await user_model.findById(userId).select('_id password');
+
+            if (!user) {
+                return res.status(404).json({ message: 'User Not found' });
+            }
+
+            const passwordCompareResult = await bcrypt.compare(oldPassword, user.password);
+
+            if (!passwordCompareResult) {
+                return res.status(401).json({ message: 'Old Password is Incorrect!' });
+            }
+
+            user.password = await bcrypt.hash(newPassword, 10);
+
+            await user.save();
+
+            res.status(201).json({ message: 'Password Updated Succesfully!' });
+        } catch (error) {
+            res.status(500).json({ error: 'An error occurred' });
+        }
+    }
+
+    async forgotPassword(req, res) {
+        try {
+            const userInput = req.body.userInput;
+
+            const user = await user_model.findOne({
+                $or: [{ username: userInput }, { email: userInput }],
+            }).select('_id username email');
+
+            if (!user) {
+                return res.status(404).json({ message: 'User Not found' });
+            }
+
+            const token = jwt.sign({ userId: user._id, email: user.email, username: user.username, date: Math.floor(Date.now() / 1000) }, process.env.JWT_SECRET_KEY);
+
+            const resetPasswordLink = `${process.env.SERVER_URL}/basic/resetPassword?token=${token}`;
+
+            const htmlContent = `
+            <p>Hello ${user.username},</p>
+            <p>You can reset your password by clicking the link below. This link will be active for only 15 minutes.</p>
+            <a href="${resetPasswordLink}">Reset Password</a>`;
+
+            let mailOptions = {
+                from: process.env.NODE_MAILER_USER_EMAIL,
+                to: user.email,
+                subject: `Reset Password for Aniframes account for ${user.username}`,
+                text: 'Hi, This is a test mail sent using Nodemailer',
+                html: htmlContent,
+                contentType: 'text/html', // Add this line
+            };            
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.log('Error:', error);
+                } else {
+                    console.log('Email sent:', info.response);
+                }
+            });
+
+            res.status(201).json({ message: 'You can reset your password by click on link which is sent to your registered account' });
+        } catch (error) {
+            res.status(500).json({ error: 'An error occurred' });
+        }
+    }
+
+    async resetPassword(req, res) {
+        try {
+            const token = req.query.token;
+
+            const newPassword = req.body.newPassword;
+
+            const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+            if (!decodedToken || !decodedToken.iat) {
+                // Invalid or missing token
+                return res.status(401).json({ message: 'Invalid token' });
+            }
+
+            const currentTime = Math.floor(Date.now() / 1000); // Convert current time to seconds
+
+            const tokenCreationTime = decodedToken.iat;
+
+            const tokenValidityPeriod = 15 * 60; // 15 minutes in seconds
+
+            if (currentTime - tokenCreationTime > tokenValidityPeriod) {
+                // Token has expired
+                return res.status(401).json({ message: 'Token has expired please get a new token by doing forgot password again' });
+            }
+
+            const user = await user_model.findById(decodedToken.userId).select('_id password');
+
+            console.log(user);
+
+            user.password = await bcrypt.hash(newPassword, 10);
+
+            await user.save();
+
+            res.status(201).json({ message: 'Password Updated Succesfully!' });
+        } catch (error) {
+            res.status(500).json({ error: 'An error occurred' });
+        }
+    }
 };
