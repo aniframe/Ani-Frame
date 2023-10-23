@@ -86,7 +86,7 @@ module.exports = class ProductController {
         try {
             // Check the user's role from the token
             const userRole = req.userData ? req.userData.role : null;
-
+    
             // Define the aggregation pipeline stages
             const pipeline = [
                 {
@@ -98,23 +98,27 @@ module.exports = class ProductController {
                     }
                 }
             ];
-
+    
             // Add a $match stage to filter products based on status if the user is a customer
             if (userRole === "customer" || userRole === null) {
                 pipeline.unshift({
                     $match: { status: true }
                 });
             }
-
+    
             const products = await Product.aggregate(pipeline);
-
+    
             for (let i = 0; i < products.length; i++) {
                 for (let j = 0; j < products[i].images.length; j++) {
                     products[i].images[j] = await update_path("product", products[i].images[j]);
-                    products[i].category[0].image = await update_path("category", products[i].category[0].image);
                 }
             }
-
+    
+            // Now, update the category image path for all products
+            for (let i = 0; i < products.length; i++) {
+                products[i].category[0].image = await update_path("category", products[i].category[0].image);
+            }
+    
             return res.status(200).json({
                 message: "Successfully fetched products!",
                 length: products.length,
@@ -165,11 +169,14 @@ module.exports = class ProductController {
                 });
             }
 
+            const updatedCategoryImage = await update_path("category", product[0].category[0].image);
+
             // Apply image_url logic to product photos
             for (let j = 0; j < product[0].images.length; j++) {
                 product[0].images[j] = await update_path("product", product[0].images[j]);
-                product[0].category[0].image = await update_path("category", product[0].category[0].image);
             }
+
+            product[0].category[0].image = updatedCategoryImage;
 
             return res.status(200).json({
                 message: "Successfully fetched product by ID!",
