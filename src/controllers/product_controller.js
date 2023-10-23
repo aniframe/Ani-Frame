@@ -8,12 +8,15 @@ const ftp = require('basic-ftp');
 async function uploadFile(file) {
     const client = new ftp.Client();
     try {
+        console.log('accessing ftp server');
         await client.access({
             host: "aniframes.in",
             user: "u614400033",
             password: "Ani@Frame*20",
             secure: false, // Set to true if you're using FTPS
         });
+
+        console.log('got access to ftp server');
 
         // Add a timestamp to the original file name
         const timestamp = Date.now();
@@ -26,9 +29,13 @@ async function uploadFile(file) {
         const remoteDir = remotePath.substr(0, remotePath.lastIndexOf('/'));
         await client.ensureDir(remoteDir);
 
+        console.log('uploading file to ftp');
+
         // Upload the file
         await client.uploadFrom(file.path, remotePath);
-        
+
+        console.log('succesfully uploaded to ftp server');
+
         return remotePath;
     } catch (error) {
         console.error('Error uploading file:', file.originalname);
@@ -42,11 +49,15 @@ module.exports = class ProductController {
 
     async createProduct(req, res) {
         try {
+            console.log("Start createProduct API");
+            console.log(req.files);
             const myfiles = req.files;
             let uploadedFiles;
             if (myfiles && myfiles.length > 0) {
+                console.log(`Uploading ${myfiles.length} files to FTP server`);
                 // Upload files to FTP server and collect the remote file paths
                 uploadedFiles = await Promise.all(myfiles.map(uploadFile));
+                console.log("Files uploaded successfully");
             }
 
             // Similar authentication and role check logic here
@@ -62,6 +73,7 @@ module.exports = class ProductController {
                 }),
                 stock
             };
+            console.log("Saving the product to the database");
             const newProduct = new Product(product);
             const savedProduct = await newProduct.save();
             if (!savedProduct) {
@@ -69,6 +81,7 @@ module.exports = class ProductController {
                     message: "Product not saved! Please insert again",
                 });
             }
+            console.log("Product Created Successfully!");
             return res.status(201).json({
                 message: "Product Created Successfully!",
                 length: 1,
@@ -86,7 +99,7 @@ module.exports = class ProductController {
         try {
             // Check the user's role from the token
             const userRole = req.userData ? req.userData.role : null;
-    
+
             // Define the aggregation pipeline stages
             const pipeline = [
                 {
@@ -98,27 +111,27 @@ module.exports = class ProductController {
                     }
                 }
             ];
-    
+
             // Add a $match stage to filter products based on status if the user is a customer
             if (userRole === "customer" || userRole === null) {
                 pipeline.unshift({
                     $match: { status: true }
                 });
             }
-    
+
             const products = await Product.aggregate(pipeline);
-    
+
             for (let i = 0; i < products.length; i++) {
                 for (let j = 0; j < products[i].images.length; j++) {
                     products[i].images[j] = await update_path("product", products[i].images[j]);
                 }
             }
-    
+
             // Now, update the category image path for all products
             for (let i = 0; i < products.length; i++) {
                 products[i].category[0].image = await update_path("category", products[i].category[0].image);
             }
-    
+
             return res.status(200).json({
                 message: "Successfully fetched products!",
                 length: products.length,
