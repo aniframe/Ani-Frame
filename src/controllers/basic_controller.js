@@ -1,4 +1,5 @@
 const user_model = require('../models/user_model');
+const Cart = require('../models/cart_model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
@@ -80,7 +81,11 @@ module.exports = class Basic {
                 }
             });
 
-            await user.save();
+            const result = await user.save();
+
+            const cart = new Cart({ user: result._id, items: [] });
+
+            await cart.save();
 
             res.status(201).json({ message: 'User registered successfully' });
         } catch (error) {
@@ -144,7 +149,7 @@ module.exports = class Basic {
                 text: 'Hi, This is a test mail sent using Nodemailer',
                 html: htmlContent,
                 contentType: 'text/html', // Add this line
-            };            
+            };
 
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
@@ -185,8 +190,6 @@ module.exports = class Basic {
             }
 
             const user = await user_model.findById(decodedToken.userId).select('_id password');
-
-            console.log(user);
 
             user.password = await bcrypt.hash(newPassword, 10);
 
